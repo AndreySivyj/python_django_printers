@@ -119,6 +119,7 @@ urlpatterns = [
 
     # export_xls
     path('export_users_xls/', export_printed_pages_xls, name='export_users_xls'),
+    path('export_users_xls_last/', export_printed_pages_xls_last, name='export_users_xls_last'),
 
 
 ]

@@ -1635,7 +1635,75 @@ def printed_pages_list_view_all_last(request):
             # 'url_return_to_the_list':'reestr_tmts_list',
         }
 
-    return render(request, 'printers/printed_pages_listview.html', context)
+    return render(request, 'printers/printed_pages_listview_last.html', context)
+
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+# export all printed_pages reestr (Printed_pagesModel)
+def export_printed_pages_xls_last(request):
+    response = HttpResponse(content_type='application/ms-excel')
+    response['Content-Disposition'] = 'attachment; filename="printed_pages.xls"'
+
+    wb = xlwt.Workbook(encoding='utf-8')
+    ws = wb.add_sheet('printed_pages')
+
+    # Sheet header, first row
+    row_num = 0
+
+    font_style = xlwt.XFStyle()
+    font_style.font.bold = True
+
+    # columns = ['Объект обслуживания', 'Модель принтера', 'S/N', 'IP-address', 'Имя на Print-server', 'Дата формирования', 'Распечатано страниц', ]
+    columns = ['id', 'id объекта обслуживания', 'Объект обслуживания', 'Модель принтера',
+                    'S/N', 'IP-address', 'Имя на Print-server', 'Локация/Кабинет', 'Дата формирования', 'Распечатано страниц', ]
+
+    for col_num in range(len(columns)):
+        ws.write(row_num, col_num, columns[col_num], font_style)
+
+    # Sheet body, remaining rows
+    font_style = xlwt.XFStyle()
+
+    rows = []
+
+    count_printers = Printers_in_serviceModel.objects.count()
+
+    dataset = Printed_pagesModel.objects.all().order_by('-created')[:count_printers]
+
+    # dataset = Printed_pagesModel.objects.all()
+    for row in dataset:
+        rows.append(
+            [
+                row.id,
+                row.printers_in_service,
+                row.service_object_name,
+                row.printers_name,
+                row.serial_number,
+                row.ip_address,
+                row.name_on_print_server,
+                row.location,
+                row.created,
+                row.printed_pages,
+            ]
+        )
+
+
+
+
+    # rows = Printed_pagesModel.objects.all().values_list('printers_in_service.service_object.service_object_name',
+    #                                                     'printers_in_service.printers.name',
+    #                                                     'printers_in_service.serial_number',
+    #                                                     'printers_in_service.ip_address',
+    #                                                     'created',
+    #                                                     'printed_pages')
+
+    rows = [[x.strftime("%Y-%m-%d %H:%M") if isinstance(x, datetime.datetime) else x for x in row] for row in rows ]
+
+    for row in rows:
+        row_num += 1
+        for col_num in range(len(row)):
+            ws.write(row_num, col_num, row[col_num], font_style)
+
+    wb.save(response)
+    return response
 
 
 
